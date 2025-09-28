@@ -15,6 +15,6 @@ serde_json = "1.0"
 tokio = { version = "1.41", features = ["full"] }
 dirs = "5.0"
 anyhow = "1.0"
-git2 = "0.19"
+git2 = { version = "0.19", features = ["vendored-openssl"] }
 glob = "0.3"
 ignore = "0.4"
