@@ -15,39 +15,6 @@ pub struct Worktree {
 }
 
 impl Worktree {
-    pub fn from_line(line: &str) -> Result<Self> {
-        let parts: Vec<&str> = line.split_whitespace().collect();
-        if parts.len() < 3 {
-            return Err(anyhow::anyhow!("Invalid worktree line format"));
-        }
-        
-        let path = PathBuf::from(parts[0]);
-        let commit = parts[1].to_string();
-        let branch_info = parts[2..].join(" ");
-        
-        let is_bare = branch_info.contains("bare");
-        let is_detached = branch_info.contains("detached");
-        let is_prunable = branch_info.contains("prunable");
-        
-        let branch = if branch_info.starts_with('[') && branch_info.ends_with(']') {
-            branch_info[1..branch_info.len()-1]
-                .replace("detached HEAD", "")
-                .trim()
-                .to_string()
-        } else {
-            branch_info
-        };
-        
-        Ok(Worktree {
-            path,
-            branch,
-            commit,
-            is_bare,
-            is_detached,
-            is_prunable,
-        })
-    }
-    
     pub fn name(&self) -> String {
         self.path
             .file_name()
@@ -64,11 +31,6 @@ pub struct WorktreeManager {
 impl WorktreeManager {
     pub fn new(repo_path: PathBuf) -> Self {
         Self { repo_path }
-    }
-    
-    pub fn from_current_dir() -> Result<Self> {
-        let current_dir = std::env::current_dir()?;
-        Ok(Self::new(current_dir))
     }
     
     pub fn list(&self) -> Result<Vec<Worktree>> {

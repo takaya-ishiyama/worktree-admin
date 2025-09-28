@@ -1,5 +1,4 @@
 use anyhow::{Context, Result};
-use ignore::gitignore::{Gitignore, GitignoreBuilder};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::collections::HashSet;
@@ -38,26 +37,12 @@ impl IgnoredItem {
 
 pub struct GitignoreManager {
     repo_path: PathBuf,
-    gitignore: Option<Gitignore>,
 }
 
 impl GitignoreManager {
     pub fn new(repo_path: PathBuf) -> Result<Self> {
-        let gitignore_path = repo_path.join(".gitignore");
-        let gitignore = if gitignore_path.exists() {
-            let mut builder = GitignoreBuilder::new(&repo_path);
-            builder.add(&gitignore_path);
-            match builder.build() {
-                Ok(gi) => Some(gi),
-                Err(_) => None,
-            }
-        } else {
-            None
-        };
-        
         Ok(Self {
             repo_path,
-            gitignore,
         })
     }
     
@@ -131,15 +116,8 @@ impl GitignoreManager {
         
         Ok(())
     }
-    
-    pub fn is_ignored(&self, path: &Path) -> bool {
-        if let Some(ref gitignore) = self.gitignore {
-            gitignore.matched(path, path.is_dir()).is_ignore()
-        } else {
-            false
-        }
-    }
 }
+
 
 fn copy_dir_recursive(src: &Path, dst: &Path) -> Result<()> {
     fs::create_dir_all(dst)?;
