@@ -160,10 +160,24 @@ impl App {
                     self.create_worktree()?;
                 }
             }
-            KeyCode::Char(' ') if self.input_mode == InputMode::Path => {
-                self.create_from_existing = !self.create_from_existing;
-                if self.create_from_existing {
-                    self.load_available_branches()?;
+            KeyCode::Char(' ') => {
+                match self.input_mode {
+                    InputMode::Path => {
+                        self.create_from_existing = !self.create_from_existing;
+                        if self.create_from_existing {
+                            self.load_available_branches()?;
+                            self.input_mode = InputMode::SelectBranch;
+                        }
+                    }
+                    InputMode::SelectBranch => {
+                        self.create_from_existing = !self.create_from_existing;
+                        if !self.create_from_existing {
+                            self.input_mode = InputMode::Path;
+                            self.available_branches.clear();
+                            self.branch_list_state.select(None);
+                        }
+                    }
+                    _ => {}
                 }
             }
             KeyCode::Up if self.input_mode == InputMode::SelectBranch => {
