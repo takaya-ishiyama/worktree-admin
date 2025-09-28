@@ -32,7 +32,7 @@ impl WorktreeManager {
     pub fn new(repo_path: PathBuf) -> Self {
         Self { repo_path }
     }
-    
+
     pub fn list(&self) -> Result<Vec<Worktree>> {
         let output = Command::new("git")
             .arg("worktree")
@@ -41,19 +41,19 @@ impl WorktreeManager {
             .current_dir(&self.repo_path)
             .output()
             .context("Failed to execute git worktree list")?;
-        
+
         if !output.status.success() {
             return Err(anyhow::anyhow!(
                 "git worktree list failed: {}",
                 String::from_utf8_lossy(&output.stderr)
             ));
         }
-        
+
         let stdout = str::from_utf8(&output.stdout)?;
         let mut worktrees = Vec::new();
         let mut current_worktree: Option<(PathBuf, String)> = None;
         let mut current_branch = String::new();
-        
+
         for line in stdout.lines() {
             if line.starts_with("worktree ") {
                 if let Some(path) = line.strip_prefix("worktree ") {
@@ -81,7 +81,7 @@ impl WorktreeManager {
                 }
             }
         }
-        
+
         if let Some((path, commit)) = current_worktree {
             worktrees.push(Worktree {
                 path,
@@ -92,65 +92,58 @@ impl WorktreeManager {
                 is_prunable: false,
             });
         }
-        
+
         Ok(worktrees)
     }
-    
+
     pub fn create(&self, branch_name: &str, path: Option<&Path>) -> Result<()> {
         let mut cmd = Command::new("git");
-        cmd.arg("worktree")
-            .arg("add")
-            .current_dir(&self.repo_path);
-        
+        cmd.arg("worktree").arg("add").current_dir(&self.repo_path);
+
         if let Some(p) = path {
             cmd.arg(p);
         } else {
             cmd.arg(format!("../{}", branch_name));
         }
-        
-        cmd.arg("-b")
-            .arg(branch_name);
-        
-        let output = cmd.output()
-            .context("Failed to execute git worktree add")?;
-        
+
+        cmd.arg("-b").arg(branch_name);
+
+        let output = cmd.output().context("Failed to execute git worktree add")?;
+
         if !output.status.success() {
             return Err(anyhow::anyhow!(
                 "git worktree add failed: {}",
                 String::from_utf8_lossy(&output.stderr)
             ));
         }
-        
+
         Ok(())
     }
-    
+
     pub fn create_from_branch(&self, branch_name: &str, path: Option<&Path>) -> Result<()> {
         let mut cmd = Command::new("git");
-        cmd.arg("worktree")
-            .arg("add")
-            .current_dir(&self.repo_path);
-        
+        cmd.arg("worktree").arg("add").current_dir(&self.repo_path);
+
         if let Some(p) = path {
             cmd.arg(p);
         } else {
             cmd.arg(format!("../{}", branch_name));
         }
-        
+
         cmd.arg(branch_name);
-        
-        let output = cmd.output()
-            .context("Failed to execute git worktree add")?;
-        
+
+        let output = cmd.output().context("Failed to execute git worktree add")?;
+
         if !output.status.success() {
             return Err(anyhow::anyhow!(
                 "git worktree add failed: {}",
                 String::from_utf8_lossy(&output.stderr)
             ));
         }
-        
+
         Ok(())
     }
-    
+
     pub fn remove(&self, path: &Path) -> Result<()> {
         let output = Command::new("git")
             .arg("worktree")
@@ -159,17 +152,17 @@ impl WorktreeManager {
             .current_dir(&self.repo_path)
             .output()
             .context("Failed to execute git worktree remove")?;
-        
+
         if !output.status.success() {
             return Err(anyhow::anyhow!(
                 "git worktree remove failed: {}",
                 String::from_utf8_lossy(&output.stderr)
             ));
         }
-        
+
         Ok(())
     }
-    
+
     pub fn prune(&self) -> Result<()> {
         let output = Command::new("git")
             .arg("worktree")
@@ -177,17 +170,17 @@ impl WorktreeManager {
             .current_dir(&self.repo_path)
             .output()
             .context("Failed to execute git worktree prune")?;
-        
+
         if !output.status.success() {
             return Err(anyhow::anyhow!(
                 "git worktree prune failed: {}",
                 String::from_utf8_lossy(&output.stderr)
             ));
         }
-        
+
         Ok(())
     }
-    
+
     pub fn get_branches(&self) -> Result<Vec<String>> {
         let output = Command::new("git")
             .arg("branch")
@@ -195,14 +188,14 @@ impl WorktreeManager {
             .current_dir(&self.repo_path)
             .output()
             .context("Failed to execute git branch")?;
-        
+
         if !output.status.success() {
             return Err(anyhow::anyhow!(
                 "git branch failed: {}",
                 String::from_utf8_lossy(&output.stderr)
             ));
         }
-        
+
         let stdout = str::from_utf8(&output.stdout)?;
         let branches = stdout
             .lines()
@@ -215,7 +208,7 @@ impl WorktreeManager {
                 }
             })
             .collect();
-        
+
         Ok(branches)
     }
 }
