@@ -61,9 +61,9 @@ fn render_main_content(app: &mut App, frame: &mut Frame, area: Rect) {
                 Span::raw(" "),
                 Span::styled(branch, Style::default().fg(Color::Green)),
                 Span::raw(" "),
-                Span::styled(commit, Style::default().fg(Color::DarkGray)),
+                Span::styled(commit, Style::default().fg(Color::White)),
                 Span::raw(" "),
-                Span::styled(path, Style::default().fg(Color::Blue)),
+                Span::styled(path, Style::default().fg(Color::Cyan)),
             ]);
             
             ListItem::new(content)
@@ -228,7 +228,7 @@ fn render_ignored_files_dialog(app: &mut App, frame: &mut Frame) {
             let path = item.relative_path(&app.repo_path);
             
             let style = if item.is_dir {
-                Style::default().fg(Color::Blue)
+                Style::default().fg(Color::Magenta)
             } else {
                 Style::default()
             };
