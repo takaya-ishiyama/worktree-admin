@@ -45,7 +45,7 @@ fn render_main_content(app: &mut App, frame: &mut Frame, area: Rect) {
         .worktrees
         .iter()
         .map(|wt| {
-            let _path = wt.path.display().to_string();
+            let path = wt.path.display().to_string();
             let branch = if wt.is_detached {
                 format!("(detached HEAD)")
             } else {
@@ -62,6 +62,8 @@ fn render_main_content(app: &mut App, frame: &mut Frame, area: Rect) {
                 Span::styled(branch, Style::default().fg(Color::Green)),
                 Span::raw(" "),
                 Span::styled(commit, Style::default().fg(Color::DarkGray)),
+                Span::raw(" "),
+                Span::styled(path, Style::default().fg(Color::Blue)),
             ]);
             
             ListItem::new(content)
