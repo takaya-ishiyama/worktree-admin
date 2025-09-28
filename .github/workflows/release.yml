@@ -45,6 +45,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install dependencies (Ubuntu)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libssl-dev
+          # クロスコンパイル用の依存関係
+          if [ "${{ matrix.target }}" = "aarch64-unknown-linux-gnu" ]; then
+            sudo apt-get install -y gcc-aarch64-linux-gnu
+          fi
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
