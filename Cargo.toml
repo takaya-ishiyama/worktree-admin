@@ -10,3 +10,11 @@ edition = "2024"
 crossterm = "0.28.1"
 ratatui = "0.29.0"
 color-eyre = "0.6.3"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tokio = { version = "1.41", features = ["full"] }
+dirs = "5.0"
+anyhow = "1.0"
+git2 = "0.19"
+glob = "0.3"
+ignore = "0.4"
