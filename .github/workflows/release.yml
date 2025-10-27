@@ -90,7 +90,7 @@ jobs:
           Compress-Archive -Path artifacts\worktree-admin.exe -DestinationPath ${{ matrix.archive_name }}
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ matrix.archive_name }}
           path: ${{ matrix.archive_name }}
