@@ -1,16 +1,37 @@
 name: Release
 
 on:
-  push:
-    tags:
-      - 'v*.*.*'
+  workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  tag:
+    name: Create Tag
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      version: ${{ steps.get_version.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get version from Cargo.toml
+        id: get_version
+        run: |
+          VERSION=$(grep '^version' Cargo.toml | head -1 | sed 's/version = "\(.*\)"/\1/')
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Create and push tag
+        run: |
+          git tag "v${{ steps.get_version.outputs.version }}"
+          git push origin "v${{ steps.get_version.outputs.version }}"
+
   build:
     name: Build ${{ matrix.target }}
+    needs: tag
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -24,7 +45,7 @@ jobs:
             target: aarch64-unknown-linux-gnu
             archive_name: worktree-admin-linux-arm64.tar.gz
             use_cross: true
-          
+
           # macOS
           - os: macos-latest
             target: x86_64-apple-darwin
@@ -32,7 +53,7 @@ jobs:
           - os: macos-latest
             target: aarch64-apple-darwin
             archive_name: worktree-admin-macos-aarch64.tar.gz
-          
+
           # Windows
           - os: windows-latest
             target: x86_64-pc-windows-msvc
@@ -97,7 +118,7 @@ jobs:
 
   release:
     name: Create Release
-    needs: build
+    needs: [tag, build]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -113,6 +134,7 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: v${{ needs.tag.outputs.version }}
           draft: false
           prerelease: false
           generate_release_notes: true
