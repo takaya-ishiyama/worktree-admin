@@ -1,6 +1,6 @@
 [package]
 name = "worktree-admin"
-version = "0.1.0"
+version = "0.1.1"
 description = "github worktree admin"
 authors = ["takaya-ishiyama <takaya.ishiyama00810@gmail.com>"]
 license = "MIT"
