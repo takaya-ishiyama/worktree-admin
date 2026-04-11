@@ -1,4 +1,4 @@
-use super::centered_rect;
+use super::centered_rect_abs_height;
 use crate::app::{App, InputMode};
 use ratatui::{
     Frame,
@@ -7,8 +7,25 @@ use ratatui::{
     widgets::{Block, Borders, Clear, List, ListItem, Paragraph},
 };
 
+/// ブランチリストの最小・最大行数 (ボーダー込み)
+const MIN_BRANCH_LIST_HEIGHT: u16 = 4; // ボーダー2 + 表示2行
+const MAX_BRANCH_LIST_HEIGHT: u16 = 12; // ボーダー2 + 表示10行
+
 pub fn render(app: &mut App, frame: &mut Frame) {
-    let area = centered_rect(60, 40, frame.area());
+    let show_branches = app.create_from_existing && !app.available_branches.is_empty();
+
+    // ブランチリストの高さ: ブランチ数 + ボーダー2行、min/max でクランプ
+    let branch_list_height = if show_branches {
+        (app.available_branches.len() as u16 + 2).clamp(MIN_BRANCH_LIST_HEIGHT, MAX_BRANCH_LIST_HEIGHT)
+    } else {
+        0
+    };
+
+    // ダイアログ全体の高さ:
+    //   外枠ボーダー上下2 + innerのmargin上下2 + 固定フィールド(BranchName3+Path3+Checkbox3) + リスト
+    let dialog_height = 2 + 2 + 9 + branch_list_height;
+
+    let area = centered_rect_abs_height(60, dialog_height, frame.area());
     frame.render_widget(Clear, area);
 
     let block = Block::default()
@@ -19,15 +36,19 @@ pub fn render(app: &mut App, frame: &mut Frame) {
     let inner = block.inner(area);
     frame.render_widget(block, area);
 
+    let mut constraints = vec![
+        Constraint::Length(3), // Branch Name
+        Constraint::Length(3), // Path
+        Constraint::Length(3), // Checkbox
+    ];
+    if show_branches {
+        constraints.push(Constraint::Length(branch_list_height));
+    }
+
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(1)
-        .constraints([
-            Constraint::Length(3),
-            Constraint::Length(3),
-            Constraint::Length(3),
-            Constraint::Min(0),
-        ])
+        .constraints(constraints)
         .split(inner);
 
     let branch_style = if app.input_mode == InputMode::BranchName {
@@ -69,7 +90,7 @@ pub fn render(app: &mut App, frame: &mut Frame) {
     .style(create_from_style);
     frame.render_widget(checkbox, chunks[2]);
 
-    if app.create_from_existing && !app.available_branches.is_empty() {
+    if show_branches {
         let branch_items: Vec<ListItem> = app
             .available_branches
             .iter()
