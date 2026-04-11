@@ -16,7 +16,8 @@ pub fn render(app: &mut App, frame: &mut Frame) {
 
     // ブランチリストの高さ: ブランチ数 + ボーダー2行、min/max でクランプ
     let branch_list_height = if show_branches {
-        (app.available_branches.len() as u16 + 2).clamp(MIN_BRANCH_LIST_HEIGHT, MAX_BRANCH_LIST_HEIGHT)
+        (app.available_branches.len() as u16 + 2)
+            .clamp(MIN_BRANCH_LIST_HEIGHT, MAX_BRANCH_LIST_HEIGHT)
     } else {
         0
     };
