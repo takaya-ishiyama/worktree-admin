@@ -32,7 +32,8 @@ pub fn render(app: &mut App, frame: &mut Frame) {
     let block = Block::default()
         .title("Create New Worktree")
         .borders(Borders::ALL)
-        .border_style(Style::default().fg(Color::Yellow));
+        .border_style(Style::default().fg(Color::Yellow))
+        .style(Style::default().bg(Color::Black));
 
     let inner = block.inner(area);
     frame.render_widget(block, area);

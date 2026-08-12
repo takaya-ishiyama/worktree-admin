@@ -7,9 +7,16 @@ use crate::app::{App, AppMode};
 use ratatui::{
     Frame,
     layout::{Constraint, Direction, Layout},
+    style::{Color, Style},
+    widgets::Block,
 };
 
 pub fn render(app: &mut App, frame: &mut Frame) {
+    frame.render_widget(
+        Block::default().style(Style::default().bg(Color::Black)),
+        frame.area(),
+    );
+
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(1)

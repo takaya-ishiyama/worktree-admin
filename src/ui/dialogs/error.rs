@@ -13,7 +13,8 @@ pub fn render(app: &App, frame: &mut Frame) {
     let block = Block::default()
         .title("Error")
         .borders(Borders::ALL)
-        .border_style(Style::default().fg(Color::Red));
+        .border_style(Style::default().fg(Color::Red))
+        .style(Style::default().bg(Color::Black));
 
     let error_text = app.error_message.as_deref().unwrap_or("Unknown error");
     let error = Paragraph::new(error_text)

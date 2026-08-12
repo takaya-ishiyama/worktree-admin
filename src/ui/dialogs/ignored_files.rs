@@ -15,7 +15,8 @@ pub fn render(app: &mut App, frame: &mut Frame) {
     let block = Block::default()
         .title("Select Ignored Files to Copy")
         .borders(Borders::ALL)
-        .border_style(Style::default().fg(Color::Cyan));
+        .border_style(Style::default().fg(Color::Cyan))
+        .style(Style::default().bg(Color::Black));
 
     let inner = block.inner(area);
     frame.render_widget(block, area);
