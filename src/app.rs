@@ -205,6 +205,7 @@ impl App {
     fn handle_select_ignored_mode(&mut self, key: KeyEvent) -> Result<()> {
         match key.code {
             KeyCode::Esc => {
+                self.refresh_worktrees()?;
                 self.mode = AppMode::Normal;
                 self.ignored_items.clear();
                 self.pending_worktree_path = None;
