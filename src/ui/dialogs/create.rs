@@ -12,7 +12,7 @@ const MIN_BRANCH_LIST_HEIGHT: u16 = 4; // ボーダー2 + 表示2行
 const MAX_BRANCH_LIST_HEIGHT: u16 = 12; // ボーダー2 + 表示10行
 
 pub fn render(app: &mut App, frame: &mut Frame) {
-    let show_branches = app.create_from_existing && !app.available_branches.is_empty();
+    let show_branches = !app.available_branches.is_empty();
 
     // ブランチリストの高さ: ブランチ数 + ボーダー2行、min/max でクランプ
     let branch_list_height = if show_branches {
@@ -103,7 +103,11 @@ pub fn render(app: &mut App, frame: &mut Frame) {
             .block(
                 Block::default()
                     .borders(Borders::ALL)
-                    .title("Available Branches"),
+                    .title(if app.create_from_existing {
+                        "Existing Branch"
+                    } else {
+                        "Parent Branch (default selected)"
+                    }),
             )
             .highlight_style(Style::default().bg(Color::DarkGray))
             .highlight_symbol("> ");

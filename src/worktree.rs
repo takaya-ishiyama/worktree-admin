@@ -96,7 +96,12 @@ impl WorktreeManager {
         Ok(worktrees)
     }
 
-    pub fn create(&self, branch_name: &str, path: Option<&Path>) -> Result<()> {
+    pub fn create(
+        &self,
+        branch_name: &str,
+        parent_branch: &str,
+        path: Option<&Path>,
+    ) -> Result<()> {
         let mut cmd = Command::new("git");
         cmd.arg("worktree").arg("add").current_dir(&self.repo_path);
 
@@ -106,7 +111,7 @@ impl WorktreeManager {
             cmd.arg(format!("../{}", branch_name));
         }
 
-        cmd.arg("-b").arg(branch_name);
+        cmd.arg("-b").arg(branch_name).arg(parent_branch);
 
         let output = cmd.output().context("Failed to execute git worktree add")?;
 
@@ -210,5 +215,111 @@ impl WorktreeManager {
             .collect();
 
         Ok(branches)
+    }
+
+    /// Return the repository's default branch, preferring the branch advertised
+    /// by origin/HEAD. The returned name matches a local branch when possible.
+    pub fn get_default_branch(&self, branches: &[String]) -> Result<String> {
+        if branches.is_empty() {
+            return Err(anyhow::anyhow!("No local branches are available"));
+        }
+
+        let remote_head = Command::new("git")
+            .args([
+                "symbolic-ref",
+                "--quiet",
+                "--short",
+                "refs/remotes/origin/HEAD",
+            ])
+            .current_dir(&self.repo_path)
+            .output()
+            .context("Failed to determine origin's default branch")?;
+
+        let remote_default = remote_head
+            .status
+            .success()
+            .then(|| str::from_utf8(&remote_head.stdout))
+            .transpose()?
+            .map(str::trim);
+
+        let configured_default = Command::new("git")
+            .args(["config", "--get", "init.defaultBranch"])
+            .current_dir(&self.repo_path)
+            .output()
+            .context("Failed to read Git's default branch setting")?;
+
+        let configured_default = configured_default
+            .status
+            .success()
+            .then(|| str::from_utf8(&configured_default.stdout))
+            .transpose()?
+            .map(str::trim);
+
+        Ok(choose_default_branch(
+            branches,
+            remote_default,
+            configured_default,
+        ))
+    }
+}
+
+fn choose_default_branch(
+    branches: &[String],
+    remote_default: Option<&str>,
+    configured_default: Option<&str>,
+) -> String {
+    let candidates = [
+        remote_default.map(|branch| branch.strip_prefix("origin/").unwrap_or(branch)),
+        configured_default,
+        Some("main"),
+        Some("master"),
+    ];
+
+    candidates
+        .into_iter()
+        .flatten()
+        .find(|candidate| branches.iter().any(|branch| branch == candidate))
+        .map(str::to_string)
+        .unwrap_or_else(|| branches[0].clone())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::choose_default_branch;
+
+    fn branches(names: &[&str]) -> Vec<String> {
+        names.iter().map(|name| name.to_string()).collect()
+    }
+
+    #[test]
+    fn remote_head_has_highest_priority() {
+        let available = branches(&["develop", "main", "release"]);
+
+        assert_eq!(
+            choose_default_branch(&available, Some("origin/release"), Some("develop")),
+            "release"
+        );
+    }
+
+    #[test]
+    fn uses_git_configuration_when_remote_head_is_unavailable() {
+        let available = branches(&["develop", "main"]);
+
+        assert_eq!(
+            choose_default_branch(&available, None, Some("develop")),
+            "develop"
+        );
+    }
+
+    #[test]
+    fn falls_back_to_conventional_or_first_branch() {
+        assert_eq!(
+            choose_default_branch(&branches(&["topic", "master"]), None, None),
+            "master"
+        );
+        assert_eq!(
+            choose_default_branch(&branches(&["develop", "topic"]), None, None),
+            "develop"
+        );
     }
 }

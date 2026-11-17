@@ -38,6 +38,7 @@ pub struct App {
     pub create_from_existing: bool,
     pub available_branches: Vec<String>,
     pub branch_list_state: ListState,
+    pub parent_branch: String,
 
     pub ignored_items: Vec<IgnoredItem>,
     pub ignored_files_list_state: ListState,
@@ -74,6 +75,7 @@ impl App {
             create_from_existing: false,
             available_branches: Vec::new(),
             branch_list_state: ListState::default(),
+            parent_branch: String::new(),
             ignored_items: Vec::new(),
             ignored_files_list_state: ListState::default(),
             error_message: None,
@@ -136,19 +138,17 @@ impl App {
             }
             KeyCode::Tab => match self.input_mode {
                 InputMode::BranchName => self.input_mode = InputMode::Path,
-                InputMode::Path => {
-                    if self.create_from_existing {
-                        self.input_mode = InputMode::SelectBranch;
-                    } else {
-                        self.input_mode = InputMode::BranchName;
-                    }
-                }
+                InputMode::Path => self.input_mode = InputMode::SelectBranch,
                 InputMode::SelectBranch => self.input_mode = InputMode::BranchName,
             },
             KeyCode::Enter => {
                 if self.input_mode == InputMode::SelectBranch {
                     if let Some(selected) = self.branch_list_state.selected() {
-                        self.branch_input = self.available_branches[selected].clone();
+                        if self.create_from_existing {
+                            self.branch_input = self.available_branches[selected].clone();
+                        } else {
+                            self.parent_branch = self.available_branches[selected].clone();
+                        }
                         self.input_mode = InputMode::BranchName;
                     }
                 } else if !self.branch_input.is_empty() {
@@ -165,10 +165,12 @@ impl App {
                 }
                 InputMode::SelectBranch => {
                     self.create_from_existing = !self.create_from_existing;
-                    if !self.create_from_existing {
-                        self.input_mode = InputMode::Path;
-                        self.available_branches.clear();
-                        self.branch_list_state.select(None);
+                    if self.create_from_existing {
+                        if let Some(selected) = self.branch_list_state.selected() {
+                            self.branch_input = self.available_branches[selected].clone();
+                        }
+                    } else {
+                        self.select_parent_branch();
                     }
                 }
                 _ => {}
@@ -226,6 +228,7 @@ impl App {
     fn start_create_worktree(&mut self) -> Result<()> {
         self.mode = AppMode::CreateWorktree;
         self.input_mode = InputMode::BranchName;
+        self.load_available_branches()?;
         Ok(())
     }
 
@@ -240,8 +243,13 @@ impl App {
             self.worktree_manager
                 .create_from_branch(&self.branch_input, path.as_deref())
         } else {
+            let parent_branch = self
+                .branch_list_state
+                .selected()
+                .and_then(|selected| self.available_branches.get(selected))
+                .unwrap_or(&self.parent_branch);
             self.worktree_manager
-                .create(&self.branch_input, path.as_deref())
+                .create(&self.branch_input, parent_branch, path.as_deref())
         };
 
         match result {
@@ -307,9 +315,21 @@ impl App {
     fn load_available_branches(&mut self) -> Result<()> {
         self.available_branches = self.worktree_manager.get_branches()?;
         if !self.available_branches.is_empty() {
-            self.branch_list_state.select(Some(0));
+            self.parent_branch = self
+                .worktree_manager
+                .get_default_branch(&self.available_branches)?;
+            self.select_parent_branch();
         }
         Ok(())
+    }
+
+    fn select_parent_branch(&mut self) {
+        let selected = self
+            .available_branches
+            .iter()
+            .position(|branch| branch == &self.parent_branch)
+            .unwrap_or(0);
+        self.branch_list_state.select(Some(selected));
     }
 
     fn load_ignored_files(&mut self) -> Result<()> {
@@ -417,6 +437,7 @@ impl App {
         self.create_from_existing = false;
         self.available_branches.clear();
         self.branch_list_state.select(None);
+        self.parent_branch.clear();
     }
 
     fn show_error(&mut self, message: &str) {
